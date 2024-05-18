@@ -1,8 +1,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 
-const contactsPath = path.join(__dirname, 'db', 'contacts.json');
-
+const contactsPath = path.resolve('db', 'contacts.json');
 
 async function listContacts() {
   try {
@@ -13,7 +12,6 @@ async function listContacts() {
   }
 }
 
-
 async function getContactById(contactId) {
   try {
     const contacts = await listContacts();
@@ -22,7 +20,6 @@ async function getContactById(contactId) {
     throw new Error(`Error getting contact by ID: ${error}`);
   }
 }
-
 
 async function removeContact(contactId) {
   try {
@@ -37,7 +34,6 @@ async function removeContact(contactId) {
   }
 }
 
-
 async function addContact(name, email, phone) {
   try {
     const newContact = { id: `${Date.now()}`, name, email, phone };
@@ -50,9 +46,27 @@ async function addContact(name, email, phone) {
   }
 }
 
-module.exports = {
-    listContacts,
-    getContactById,
-    removeContact,
-    addContact
+async function updateContact(contactId, updatedData) {
+  try {
+    const contacts = await listContacts();
+    const contactIndex = contacts.findIndex(contact => contact.id === contactId);
+    if (contactIndex === -1) return null;
+    
+    const updatedContact = { ...contacts[contactIndex], ...updatedData };
+    contacts[contactIndex] = updatedContact;
+    
+    await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
+    return updatedContact;
+  } catch (error) {
+    throw new Error(`Error updating contact: ${error}`);
+  }
 }
+
+module.exports = {
+  listContacts,
+  getContactById,
+  removeContact,
+  addContact,
+  updateContact
+}
+
