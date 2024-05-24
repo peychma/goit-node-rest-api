@@ -3,10 +3,10 @@ const HttpError = require("../helpers/HttpError");
 
 const getAllContacts = async (req, res, next) => {
   try {
-    const result = await Contact.find();
+    const result = await Contact.find({}, "-createdAt, -updatedAt");
     res.json(result);
   } catch (error) {
-    next(error);
+    next(error)
   }
 };
 
