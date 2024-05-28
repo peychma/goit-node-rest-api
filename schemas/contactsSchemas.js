@@ -12,10 +12,13 @@ const updateContactSchema = Joi.object({
   email: Joi.string().email(),
   phone: Joi.string(),
   favorite: Joi.boolean()
-});
+}).min(1);
 
 const updateFavoriteSchema = Joi.object({
-  favorite: Joi.boolean().required()
+  name: Joi.string(),
+  email: Joi.string(),
+  phone: Joi.string(),
+  favorite: Joi.boolean().required(),
 });
 
 module.exports = {
