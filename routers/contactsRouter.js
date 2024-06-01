@@ -1,11 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const { validateBody } = require("../helpers/validateBody");
+const { authorize } = require("../middleware/authorize");
 const {
   createContactSchema,
   updateContactSchema,
   updateFavoriteSchema
-} = require("../schemas/contactsSchemas");
+} = require("../schemas/schemas");
 
 const {
   getAllContacts,
@@ -15,6 +16,8 @@ const {
   updateContact,
   updateStatusContact
 } = require("../controllers/contactsControllers");
+
+router.use(authorize);
 
 router.get("/", getAllContacts);
 router.get("/:id", getOneContact);

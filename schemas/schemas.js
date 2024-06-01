@@ -1,5 +1,6 @@
 const Joi = require("joi");
 
+
 const createContactSchema = Joi.object({
   name: Joi.string().required(),
   email: Joi.string().email().required(),
@@ -20,9 +21,24 @@ const updateFavoriteSchema = Joi.object({
   phone: Joi.string(),
   favorite: Joi.boolean().required(),
 });
+const registSchema = Joi.object({
+    password: Joi.string().min(6).required(),
+    email: Joi.string().required(),
+    subscription: Joi.string(),
+    token: Joi.string(),
+});
+
+const loginSchema = Joi.object({
+    password: Joi.string().min(6).required(),
+    email: Joi.string().required(),
+});
+
+
 
 module.exports = {
   createContactSchema,
   updateContactSchema,
-  updateFavoriteSchema
+  updateFavoriteSchema,
+  registSchema,
+  loginSchema
 };

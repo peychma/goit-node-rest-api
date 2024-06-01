@@ -1,11 +1,21 @@
 const Contact = require("../model/contact");
 const { HttpError } = require("../helpers/HttpError");
-const { createContactSchema, updateContactSchema, updateFavoriteSchema } = require("../schemas/contactsSchemas");
+const { createContactSchema, updateContactSchema, updateFavoriteSchema } = require("../schemas/schemas");
 
 const getAllContacts = async (req, res, next) => {
   try {
-    const result = await Contact.find({}, "-createdAt -updatedAt");
-    res.json(result);
+    const { page = 1, limit = 20, favorite } = req.query;
+    const skip = (page - 1) * limit;
+
+    const filter = { owner: req.user._id };
+    if (favorite !== undefined) {
+      filter.favorite = favorite === 'true';
+    }
+
+    const contacts = await Contact.find(filter, "-createdAt -updatedAt", { skip, limit: Number(limit) })
+      .populate('owner', 'email subscription');
+
+    res.json(contacts);
   } catch (error) {
     next(error);
   }
@@ -61,11 +71,15 @@ const updateContact = async (req, res, next) => {
     }
 
     const { id } = req.params;
-    const result = await Contact.findByIdAndUpdate(id, req.body, { new: true });
-    if (!result) {
+    const contact = await Contact.findOneAndUpdate(
+      { _id: id, owner: req.user._id },
+      req.body,
+      { new: true }
+    );
+    if (!contact) {
       throw HttpError(404, "Not found");
     }
-    res.json(result);
+    res.json(contact);
   } catch (error) {
     next(error);
   }
@@ -80,11 +94,15 @@ const updateStatusContact = async (req, res, next) => {
 
     const { id } = req.params;
     const { favorite } = req.body;
-    const result = await Contact.findByIdAndUpdate(id, { favorite }, { new: true });
-    if (!result) {
+    const contact = await Contact.findOneAndUpdate(
+      { _id: id, owner: req.user._id },
+      { favorite },
+      { new: true }
+    );
+    if (!contact) {
       throw HttpError(404, "Not found");
     }
-    res.json(result);
+    res.json(contact);
   } catch (error) {
     next(error);
   }
