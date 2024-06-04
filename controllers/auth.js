@@ -3,6 +3,34 @@ const jwt = require("jsonwebtoken");
 const User = require("../model/user");
 const { HttpError } = require("../helpers/HttpError");
 const { loginSchema, registSchema } = require("../schemas/schemas");
+const fs = require("fs").promises;
+const path = require("path");
+const Jimp = require("jimp");
+const User = require("../model/user");
+
+const uploadAvatar = async (req, res, next) => {
+  try {
+    const { path: tempPath, filename } = req.file;
+    const { _id: userId } = req.user;
+
+    const image = await Jimp.read(tempPath);
+    await image.resize(250, 250).writeAsync(tempPath);
+
+    const avatarsDir = path.join(__dirname, "../public/avatars");
+    const uniqueFilename = `${userId}-${filename}`;
+    const finalPath = path.join(avatarsDir, uniqueFilename);
+
+    await fs.rename(tempPath, finalPath);
+
+    const avatarURL = `/avatars/${uniqueFilename}`;
+
+    await User.findByIdAndUpdate(userId, { avatarURL });
+
+    res.json({ avatarURL });
+  } catch (error) {
+    next(error);
+  }
+};
 
 const login = async (req, res, next) => {
   try {
@@ -80,20 +108,22 @@ const registration = async (req, res, next) => {
     if (existingUser) {
       throw HttpError(409, "Email in use");
     }
-
+    const avatarURL = gravatar.url(email, { s: '250', d: 'identicon' }, true);
     const hashPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ email, password: hashPassword });
+    const newUser = await User.create({ email, avatarURL, password: hashPassword });
 
     res.status(201).json({
       user: {
         email: newUser.email,
         subscription: newUser.subscription,
+        avatarURL: newUser.avatarURL,
       },
     });
   } catch (error) {
     next(error);
   }
 };
+
 
 
 const subscription = async (req, res, next) => {
@@ -123,4 +153,4 @@ const subscription = async (req, res, next) => {
 };
 
 
-module.exports = { registration, login, currentUser, logout, subscription};
+module.exports = { registration, login, currentUser, logout, subscription, uploadAvatar};
