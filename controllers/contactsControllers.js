@@ -9,11 +9,11 @@ const getAllContacts = async (req, res, next) => {
 
     const filter = { owner: req.user._id };
     if (favorite !== undefined) {
-      filter.favorite = favorite === 'true';
+      filter.favorite = favorite === "true";
     }
 
     const contacts = await Contact.find(filter, "-createdAt -updatedAt", { skip, limit: Number(limit) })
-      .populate('owner', 'email subscription');
+      .populate("owner", "email subscription");
 
     res.json(contacts);
   } catch (error) {
@@ -24,7 +24,7 @@ const getAllContacts = async (req, res, next) => {
 const getOneContact = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const result = await Contact.findById(id);
+    const result = await Contact.findOne({ _id: id, owner: req.user._id });
     if (!result) {
       throw HttpError(404, "Not found");
     }
@@ -37,7 +37,7 @@ const getOneContact = async (req, res, next) => {
 const deleteContact = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const result = await Contact.findByIdAndDelete(id);
+    const result = await Contact.findOneAndDelete({ _id: id, owner: req.user._id });
     if (!result) {
       throw HttpError(404, "Not found");
     }
@@ -55,7 +55,7 @@ const createContact = async (req, res, next) => {
     }
 
     const { name, email, phone, favorite } = req.body;
-    const newContact = new Contact({ name, email, phone, favorite });
+    const newContact = new Contact({ name, email, phone, favorite, owner: req.user._id  });
     const result = await newContact.save();
     res.status(201).json(result);
   } catch (error) {

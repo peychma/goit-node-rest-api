@@ -6,7 +6,7 @@ const { loginSchema, registSchema } = require("../schemas/schemas");
 const fs = require("fs").promises;
 const path = require("path");
 const Jimp = require("jimp");
-const User = require("../model/user");
+const gravatar = require("gravatar");
 
 const uploadAvatar = async (req, res, next) => {
   try {
@@ -14,9 +14,10 @@ const uploadAvatar = async (req, res, next) => {
     const { _id: userId } = req.user;
 
     const image = await Jimp.read(tempPath);
-    await image.resize(250, 250).writeAsync(tempPath);
+    await image.resize(250, Jimp.AUTO).writeAsync(tempPath);
 
     const avatarsDir = path.join(__dirname, "../public/avatars");
+    await fs.mkdir(avatarsDir, { recursive: true });
     const uniqueFilename = `${userId}-${filename}`;
     const finalPath = path.join(avatarsDir, uniqueFilename);
 
@@ -108,7 +109,7 @@ const registration = async (req, res, next) => {
     if (existingUser) {
       throw HttpError(409, "Email in use");
     }
-    const avatarURL = gravatar.url(email, { s: '250', d: 'identicon' }, true);
+    const avatarURL = gravatar.url(email, { size: '250' }, true);
     const hashPassword = await bcrypt.hash(password, 10);
     const newUser = await User.create({ email, avatarURL, password: hashPassword });
 
