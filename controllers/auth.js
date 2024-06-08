@@ -7,6 +7,62 @@ const fs = require("fs").promises;
 const path = require("path");
 const Jimp = require("jimp");
 const gravatar = require("gravatar");
+const { v4: uuidv4 } = require("uuid");
+const { BASE_URL } = process.env;
+const sendEmail = require("../nodemailer/sendMail");
+
+
+const verifyEmailResend = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "missing required field email" });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.verify) {
+      return res.status(400).json({ message: "Verification has already been passed" });
+    }
+
+    const verificationLink = `${BASE_URL}/users/verify/${user.verificationToken}`;
+    const message = `Please verify your email by clicking on the following link: ${verificationLink}`;
+
+    await sendEmail(email, "Verify your email", message);
+
+    res.status(200).json({ message: "Verification email sent" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+const verifyUser = async (req, res, next) => {
+  try {
+    const { verificationToken } = req.params;
+    const user = await User.findOne({ verificationToken });
+
+    if (!user) {
+      throw HttpError(404, "User not found");
+    }
+
+    user.verificationToken = null;
+    user.verify = true;
+    await user.save();
+
+    res.status(200).json({
+      message: "Verification successful",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 const uploadAvatar = async (req, res, next) => {
   try {
@@ -45,6 +101,10 @@ const login = async (req, res, next) => {
 
     if (!user || !await bcrypt.compare(password, user.password)) {
       throw HttpError(401, "Email or password is wrong");
+    }
+
+    if (!user.verified) {
+      throw HttpError(403, "Email is not verified");
     }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
@@ -109,9 +169,16 @@ const registration = async (req, res, next) => {
     if (existingUser) {
       throw HttpError(409, "Email in use");
     }
-    const avatarURL = gravatar.url(email, { size: '250' }, true);
+
+    const verificationToken = uuidv4();
+    const avatarURL = gravatar.url(email, { size: "250" }, true);
     const hashPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ email, avatarURL, password: hashPassword });
+    const newUser = await User.create({ email, avatarURL, password: hashPassword, verificationToken });
+
+    const verificationLink = `${BASE_URL}/users/verify/${verificationToken}`;
+    const emailSubject = 'Verify your email';
+    const emailText = `Please verify your email by clicking on the following link: ${verificationLink}`;
+    await sendEmail(email, emailSubject, emailText);
 
     res.status(201).json({
       user: {
@@ -154,4 +221,4 @@ const subscription = async (req, res, next) => {
 };
 
 
-module.exports = { registration, login, currentUser, logout, subscription, uploadAvatar};
+module.exports = { registration, login, currentUser, logout, subscription, uploadAvatar, verifyUser, verifyEmailResend};

@@ -33,12 +33,15 @@ const loginSchema = Joi.object({
     email: Joi.string().required(),
 });
 
-
+const verifyEmailSchema = Joi.object({
+    email: Joi.string().email().required(),
+});
 
 module.exports = {
   createContactSchema,
   updateContactSchema,
   updateFavoriteSchema,
   registSchema,
-  loginSchema
+  loginSchema,
+  verifyEmailSchema
 };

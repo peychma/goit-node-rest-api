@@ -4,7 +4,6 @@ const cors = require("cors");
 require("dotenv").config(); 
 const authRouter = require("./routers/authRouter")
 const contactsRouter = require("./routers/contactsRouter");
-const path = require('path'); 
 
 const app = express();
 
@@ -14,8 +13,6 @@ app.use(express.json());
 app.use("/users", authRouter);
 app.use("/api/contacts", contactsRouter);
 app.use(express.static("public"));
-
-//app.use("/avatars", express.static(path.join(__dirname, "./public/avatars")));
 
 app.use((_, res) => {
   res.status(404).json({ message: "Route not found" });
