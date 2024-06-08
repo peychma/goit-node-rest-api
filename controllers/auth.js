@@ -103,7 +103,7 @@ const login = async (req, res, next) => {
       throw HttpError(401, "Email or password is wrong");
     }
 
-    if (!user.verified) {
+    if (!user.verify) {
       throw HttpError(403, "Email is not verified");
     }
 
